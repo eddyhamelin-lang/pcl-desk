@@ -106,15 +106,94 @@ html:not([data-theme="dark"]) .no-result {
 }
 
 /* Section headings — SALES, PURCHASING, WAREHOUSE and the rest. Smaller and
-   quieter than the rows beneath them, so the eye reads the group first. */
-.body-sidebar .sidebar-item-container.section-item .item-anchor .sidebar-item-label,
-.body-sidebar .section-break .sidebar-item-label {
+   quieter than the rows beneath them, so the eye reads the group first.
+
+   ⚠️ The `>` is load-bearing. Without it this matched every label INSIDE a
+   section too, so all 44 rows under a heading rendered at 10.5px uppercase bold
+   — which is why Company Home and Announcements looked twice the size of
+   everything else. They were not big; everything else was shrunk. */
+.body-sidebar .sidebar-item-container.section-item > .standard-sidebar-item .sidebar-item-label,
+.body-sidebar .section-break > .sidebar-item-label {
   font-size: calc(10.5px * var(--pcl-font-scale));
   letter-spacing: 0.05em;
   text-transform: uppercase;
   font-weight: 700;
   opacity: 0.62;
 }
+
+/* ── SIDEBAR ICON COLOUR ──────────────────────────────────────────────────────
+   Every row gets its own hue. The hues are spaced by the golden angle (137.5°)
+   so no two neighbours land near each other on the wheel, and saturation and
+   lightness are identical on all 44 — which is what stops forty colours looking
+   like confetti rather than a system. Same idea as macOS System Settings.
+
+   Colouring by DEPARTMENT was tried first and rejected: nine Sales rows sharing
+   one blue is exactly the "so many are the same colour" problem.
+
+   Hues are written out per row rather than computed, so moving a row in the
+   sidebar does not silently recolour everything below it. A row added later
+   simply keeps the default grey until it is added here.
+
+   ⚠️ These are OUTLINE icons, so the visible colour is a thin ring rather than
+   a filled shape. Stroke width and size below are doing as much work as the hue
+   — at 16px/2.0 the line renders about 1.3px and every colour reads washed out.
+   Do not thin these without looking at the result. */
+.body-sidebar .standard-sidebar-item .sidebar-item-icon {
+  background: none;
+}
+.body-sidebar .standard-sidebar-item .sidebar-item-icon svg {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  fill: none;
+  stroke-width: 2.6;
+  shape-rendering: geometricPrecision;
+}
+
+.body-sidebar-top > .sidebar-items > .sidebar-item-container[item-name="Company Home"] > .standard-sidebar-item .sidebar-item-icon svg { color: hsl(0 88% 45%); stroke: hsl(0 88% 45%); }
+.body-sidebar-top > .sidebar-items > .sidebar-item-container[item-name="Announcements"] > .standard-sidebar-item .sidebar-item-icon svg { color: hsl(138 88% 45%); stroke: hsl(138 88% 45%); }
+.sidebar-item-container[item-name="Sales"] .nested-container .sidebar-item-container[item-name="Overview"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(275 88% 45%); stroke: hsl(275 88% 45%); }
+.sidebar-item-container[item-name="Sales"] .nested-container .sidebar-item-container[item-name="Quotations"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(53 88% 45%); stroke: hsl(53 88% 45%); }
+.sidebar-item-container[item-name="Sales"] .nested-container .sidebar-item-container[item-name="Sales Orders"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(190 88% 45%); stroke: hsl(190 88% 45%); }
+.sidebar-item-container[item-name="Sales"] .nested-container .sidebar-item-container[item-name="Delivery Orders"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(328 88% 45%); stroke: hsl(328 88% 45%); }
+.sidebar-item-container[item-name="Sales"] .nested-container .sidebar-item-container[item-name="Sales Invoices"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(105 88% 45%); stroke: hsl(105 88% 45%); }
+.sidebar-item-container[item-name="Sales"] .nested-container .sidebar-item-container[item-name="Customers"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(243 88% 45%); stroke: hsl(243 88% 45%); }
+.sidebar-item-container[item-name="Sales"] .nested-container .sidebar-item-container[item-name="Leads"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(20 88% 45%); stroke: hsl(20 88% 45%); }
+.sidebar-item-container[item-name="Sales"] .nested-container .sidebar-item-container[item-name="Territories"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(158 88% 45%); stroke: hsl(158 88% 45%); }
+.sidebar-item-container[item-name="Sales"] .nested-container .sidebar-item-container[item-name="Sales Map"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(295 88% 45%); stroke: hsl(295 88% 45%); }
+.sidebar-item-container[item-name="Purchasing"] .nested-container .sidebar-item-container[item-name="Purchase Orders"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(73 88% 45%); stroke: hsl(73 88% 45%); }
+.sidebar-item-container[item-name="Purchasing"] .nested-container .sidebar-item-container[item-name="Goods Receipts"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(210 88% 45%); stroke: hsl(210 88% 45%); }
+.sidebar-item-container[item-name="Purchasing"] .nested-container .sidebar-item-container[item-name="Purchase Invoices"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(348 88% 45%); stroke: hsl(348 88% 45%); }
+.sidebar-item-container[item-name="Purchasing"] .nested-container .sidebar-item-container[item-name="Suppliers"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(125 88% 45%); stroke: hsl(125 88% 45%); }
+.sidebar-item-container[item-name="Warehouse"] .nested-container .sidebar-item-container[item-name="Overview"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(263 88% 45%); stroke: hsl(263 88% 45%); }
+.sidebar-item-container[item-name="Warehouse"] .nested-container .sidebar-item-container[item-name="Stock Entries"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(40 88% 45%); stroke: hsl(40 88% 45%); }
+.sidebar-item-container[item-name="Warehouse"] .nested-container .sidebar-item-container[item-name="Material Requests"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(178 88% 45%); stroke: hsl(178 88% 45%); }
+.sidebar-item-container[item-name="Warehouse"] .nested-container .sidebar-item-container[item-name="Pick Lists"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(315 88% 45%); stroke: hsl(315 88% 45%); }
+.sidebar-item-container[item-name="Warehouse"] .nested-container .sidebar-item-container[item-name="Batches"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(93 88% 45%); stroke: hsl(93 88% 45%); }
+.sidebar-item-container[item-name="Warehouse"] .nested-container .sidebar-item-container[item-name="Items"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(230 88% 45%); stroke: hsl(230 88% 45%); }
+.sidebar-item-container[item-name="Warehouse"] .nested-container .sidebar-item-container[item-name="Stock Balance"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(8 88% 45%); stroke: hsl(8 88% 45%); }
+.sidebar-item-container[item-name="Finance"] .nested-container .sidebar-item-container[item-name="Overview"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(145 88% 45%); stroke: hsl(145 88% 45%); }
+.sidebar-item-container[item-name="Finance"] .nested-container .sidebar-item-container[item-name="Payment Entries"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(283 88% 45%); stroke: hsl(283 88% 45%); }
+.sidebar-item-container[item-name="Finance"] .nested-container .sidebar-item-container[item-name="Journal Entries"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(60 88% 45%); stroke: hsl(60 88% 45%); }
+.sidebar-item-container[item-name="Finance"] .nested-container .sidebar-item-container[item-name="Chart of Accounts"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(198 88% 45%); stroke: hsl(198 88% 45%); }
+.sidebar-item-container[item-name="Finance"] .nested-container .sidebar-item-container[item-name="Financial Reports"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(335 88% 45%); stroke: hsl(335 88% 45%); }
+.sidebar-item-container[item-name="Finance"] .nested-container .sidebar-item-container[item-name="Assets"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(113 88% 45%); stroke: hsl(113 88% 45%); }
+.sidebar-item-container[item-name="Regulatory & Quality"] .nested-container .sidebar-item-container[item-name="Overview"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(250 88% 45%); stroke: hsl(250 88% 45%); }
+.sidebar-item-container[item-name="Regulatory & Quality"] .nested-container .sidebar-item-container[item-name="Product Registrations"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(28 88% 45%); stroke: hsl(28 88% 45%); }
+.sidebar-item-container[item-name="Regulatory & Quality"] .nested-container .sidebar-item-container[item-name="SOP Register"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(165 88% 45%); stroke: hsl(165 88% 45%); }
+.sidebar-item-container[item-name="Regulatory & Quality"] .nested-container .sidebar-item-container[item-name="Quality Inspections"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(303 88% 45%); stroke: hsl(303 88% 45%); }
+.sidebar-item-container[item-name="Regulatory & Quality"] .nested-container .sidebar-item-container[item-name="Customer Complaints"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(80 88% 45%); stroke: hsl(80 88% 45%); }
+.sidebar-item-container[item-name="Regulatory & Quality"] .nested-container .sidebar-item-container[item-name="CAPA"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(218 88% 45%); stroke: hsl(218 88% 45%); }
+.sidebar-item-container[item-name="Regulatory & Quality"] .nested-container .sidebar-item-container[item-name="Returned Goods"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(355 88% 45%); stroke: hsl(355 88% 45%); }
+.sidebar-item-container[item-name="HR & Admin"] .nested-container .sidebar-item-container[item-name="HR Overview"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(133 88% 45%); stroke: hsl(133 88% 45%); }
+.sidebar-item-container[item-name="HR & Admin"] .nested-container .sidebar-item-container[item-name="Employees"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(270 88% 45%); stroke: hsl(270 88% 45%); }
+.sidebar-item-container[item-name="HR & Admin"] .nested-container .sidebar-item-container[item-name="Leave Applications"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(48 88% 45%); stroke: hsl(48 88% 45%); }
+.sidebar-item-container[item-name="HR & Admin"] .nested-container .sidebar-item-container[item-name="Attendance"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(185 88% 45%); stroke: hsl(185 88% 45%); }
+.sidebar-item-container[item-name="HR & Admin"] .nested-container .sidebar-item-container[item-name="Expense Claims"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(323 88% 45%); stroke: hsl(323 88% 45%); }
+.sidebar-item-container[item-name="HR & Admin"] .nested-container .sidebar-item-container[item-name="Payroll"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(100 88% 45%); stroke: hsl(100 88% 45%); }
+.sidebar-item-container[item-name="HR & Admin"] .nested-container .sidebar-item-container[item-name="Store Room"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(238 88% 45%); stroke: hsl(238 88% 45%); }
+.sidebar-item-container[item-name="Training"] .nested-container .sidebar-item-container[item-name="Courses"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(15 88% 45%); stroke: hsl(15 88% 45%); }
+.sidebar-item-container[item-name="Training"] .nested-container .sidebar-item-container[item-name="Training Portal"] .standard-sidebar-item .sidebar-item-icon svg { color: hsl(153 88% 45%); stroke: hsl(153 88% 45%); }
 
 /* ── WORKSPACE WIDTH ──────────────────────────────────────────────────────────
    Stock Frappe caps workspace content at 900px, which is why the Sales Map was
