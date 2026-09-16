@@ -1,0 +1,310 @@
+/* =============================================================================
+   Phannthamit Desk — stylesheet
+   -----------------------------------------------------------------------------
+   One brand, set once, in a file. Everything here is a static value shipped with
+   the app, which means it is already in <head> before the first paint: no flash,
+   no database round trip, and no forked copy of Frappe's desk template to rot on
+   the next upgrade. That fork was the single biggest risk in the theme this
+   replaces, and it existed only to support colours that could change at runtime.
+   We do not need colours that change at runtime.
+
+   Parts of the sidebar selector chains below were learned from Solvronix Desk
+   (MIT, github.com/Solvronix/Solvronix-Desk). Frappe's own sidebar rules carry
+   three classes, so anything shorter loses; the four-class chains are the reason
+   these rules bite at all.
+   ============================================================================= */
+
+:root {
+  /* ---- The two-tone canvas -------------------------------------------------
+     A tinted page with white cards floating on it gives every card an edge
+     without drawing a single border. That is the whole trick; the softness is a
+     side effect. Stock Frappe paints both the canvas and the cards pure white
+     and then leans on borders, which is busier.
+
+     These are FIXED values on purpose. The theme this replaces derived the tint
+     from the brand colour, which meant changing the brand silently moved the
+     canvas underneath everything. Ours is its own decision.
+     Kept to ~3% off white: far enough to read as a canvas, close enough that
+     text contrast stays well inside WCAG. */
+  --pcl-canvas: #F6F7F9;
+  --pcl-card:   #FFFFFF;
+
+  /* ---- Sidebar -------------------------------------------------------------
+     The hover tint is not decoration. With 51 rows in the Phannthamit sidebar,
+     it is what tells you which one you are about to hit. */
+  --pcl-sidebar-hover: rgba(15, 23, 42, 0.055);
+  --pcl-sidebar-radius: 6px;
+
+  /* Set by the All Options drawer. Defaults match stock Frappe. */
+  --pcl-font-scale: 1;
+  --pcl-row-gap: 1;
+}
+
+/* ── FONT SIZE ────────────────────────────────────────────────────────────────
+   Deliberately per-browser rather than per-user-account: a phone wants larger
+   text than a 27-inch monitor, and the same person uses both. Stored in
+   localStorage by all_options.js. */
+html[data-pcl-font="sm"] { --pcl-font-scale: 0.92; }
+html[data-pcl-font="md"] { --pcl-font-scale: 1; }
+html[data-pcl-font="lg"] { --pcl-font-scale: 1.12; }
+
+html[data-pcl-font="sm"] body { font-size: 13px; }
+html[data-pcl-font="lg"] body { font-size: 15px; }
+
+/* ── DENSITY ──────────────────────────────────────────────────────────────────
+   Compact tightens list and sidebar rows only. It deliberately does NOT touch
+   forms — squeezing a data-entry form is how people mis-key things. */
+html[data-pcl-density="compact"] { --pcl-row-gap: 0.72; }
+
+/* ── PAGE CANVAS ──────────────────────────────────────────────────────────────
+   Light mode only. v16 ships dark mode natively via User.desk_theme and it is
+   already coherent; we do not repaint it. */
+html:not([data-theme="dark"]) {
+  --bg-color: var(--pcl-canvas);
+}
+
+html:not([data-theme="dark"]) body,
+html:not([data-theme="dark"]) .main-section,
+html:not([data-theme="dark"]) .page-container,
+html:not([data-theme="dark"]) .desk-page,
+html:not([data-theme="dark"]) .layout-main-section-wrapper {
+  background-color: var(--pcl-canvas);
+}
+
+/* Surfaces stay white and float over it. */
+html:not([data-theme="dark"]) .form-page,
+html:not([data-theme="dark"]) .frappe-card,
+html:not([data-theme="dark"]) .widget,
+html:not([data-theme="dark"]) .form-section .section-body,
+html:not([data-theme="dark"]) .list-row-container,
+html:not([data-theme="dark"]) .result,
+html:not([data-theme="dark"]) .no-result {
+  background-color: var(--pcl-card);
+}
+
+/* ── SIDEBAR ──────────────────────────────────────────────────────────────────
+   Four-class chains, because Frappe's own rules carry three and specificity is
+   the only thing standing between these rules and nothing happening. */
+.body-sidebar-container .body-sidebar .standard-sidebar-item .item-anchor,
+.body-sidebar-container .body-sidebar .nested-container .standard-sidebar-item .item-anchor,
+.body-sidebar-container .body-sidebar .standard-sidebar-item.indent .item-anchor {
+  border-radius: var(--pcl-sidebar-radius);
+  padding: calc(3px * var(--pcl-row-gap)) 6px;
+  transition: background-color 90ms ease;
+}
+
+.body-sidebar-container .body-sidebar .standard-sidebar-item:not(.active-sidebar) .item-anchor:hover,
+.body-sidebar-container .body-sidebar .nested-container .standard-sidebar-item:not(.active-sidebar) .item-anchor:hover {
+  background-color: var(--pcl-sidebar-hover);
+  border-radius: var(--pcl-sidebar-radius);
+  text-decoration: none;
+}
+
+/* Labels scale with the Font Size control. */
+.body-sidebar-container .body-sidebar .standard-sidebar-item .sidebar-item-label {
+  font-size: calc(14px * var(--pcl-font-scale));
+}
+
+/* Section headings — SALES, PURCHASING, WAREHOUSE and the rest. Smaller and
+   quieter than the rows beneath them, so the eye reads the group first. */
+.body-sidebar .sidebar-item-container.section-item .item-anchor .sidebar-item-label,
+.body-sidebar .section-break .sidebar-item-label {
+  font-size: calc(10.5px * var(--pcl-font-scale));
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 700;
+  opacity: 0.62;
+}
+
+/* ── WORKSPACE WIDTH ──────────────────────────────────────────────────────────
+   Stock Frappe caps workspace content at 900px, which is why the Sales Map was
+   squeezed into a third of a monitor. Opt in per workspace by adding the class
+   to <body> — see all_options.js. Not applied to every workspace by default,
+   because a 1600px-wide page of text is worse than a narrow one; it is maps,
+   tables and dashboards that need the room. */
+body.pcl-wide .layout-main {
+  max-width: none;
+}
+
+/* ── ALL OPTIONS DRAWER ───────────────────────────────────────────────────────
+   Built because v16 swaps the left sidebar for whichever module owns the
+   doctype you just opened — so the Phannthamit menu vanishes the moment anyone
+   opens a Quotation. This is the way back, from anywhere, always. */
+.pcl-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.32);
+  z-index: 1049;
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+.pcl-drawer-backdrop.pcl-open { opacity: 1; }
+
+.pcl-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 380px;
+  max-width: 92vw;
+  background: var(--fg-color, #fff);
+  border-left: 1px solid var(--border-color, #ededed);
+  box-shadow: -8px 0 28px rgba(15, 23, 42, 0.12);
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 160ms ease;
+}
+.pcl-drawer.pcl-open { transform: translateX(0); }
+
+.pcl-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border-color, #ededed);
+}
+.pcl-drawer-head h5 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color, #383838);
+}
+.pcl-drawer-close {
+  border: 0;
+  background: none;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-muted, #888);
+  padding: 0 4px;
+}
+.pcl-drawer-close:hover { color: var(--text-color, #383838); }
+
+.pcl-drawer-body {
+  overflow-y: auto;
+  padding: 12px 16px 24px;
+  flex: 1;
+}
+
+.pcl-drawer-search {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color, #ededed);
+  border-radius: 6px;
+  background: var(--control-bg, #f3f3f3);
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+.pcl-drawer-search:focus {
+  outline: none;
+  border-color: var(--text-muted, #aaa);
+  background: var(--fg-color, #fff);
+}
+
+.pcl-drawer-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted, #888);
+  margin: 14px 0 7px;
+}
+
+.pcl-seg-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text-color, #383838);
+}
+.pcl-seg {
+  display: inline-flex;
+  border: 1px solid var(--border-color, #ededed);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.pcl-seg button {
+  border: 0;
+  background: var(--fg-color, #fff);
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-color, #383838);
+  border-right: 1px solid var(--border-color, #ededed);
+}
+.pcl-seg button:last-child { border-right: 0; }
+.pcl-seg button:hover { background: var(--control-bg, #f3f3f3); }
+.pcl-seg button.pcl-on {
+  background: var(--text-color, #383838);
+  color: var(--fg-color, #fff);
+}
+
+.pcl-nav-list { display: flex; flex-direction: column; gap: 1px; }
+
+.pcl-nav-section {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted, #999);
+  padding: 12px 8px 4px;
+}
+
+.pcl-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-color, #383838);
+  cursor: pointer;
+  border: 0;
+  background: none;
+  text-align: left;
+  width: 100%;
+}
+.pcl-nav-item:hover { background: var(--pcl-sidebar-hover); }
+.pcl-nav-item svg { width: 15px; height: 15px; flex: 0 0 15px; opacity: 0.66; }
+
+.pcl-nav-empty {
+  padding: 18px 8px;
+  font-size: 13px;
+  color: var(--text-muted, #999);
+}
+
+/* Navbar buttons — home, tasks, all options. */
+.pcl-navbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--text-muted, #666);
+  padding: 4px 7px;
+  border-radius: 6px;
+  font-size: 12.5px;
+}
+.pcl-navbar-btn:hover {
+  background: var(--control-bg, #f3f3f3);
+  color: var(--text-color, #383838);
+}
+.pcl-navbar-btn svg { width: 16px; height: 16px; }
+.pcl-navbar-btn .pcl-kbd {
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 4px;
+  padding: 0 4px;
+  font-size: 10.5px;
+  color: var(--text-muted, #999);
+}
+
+@media (max-width: 720px) {
+  .pcl-navbar-btn .pcl-btn-text, .pcl-navbar-btn .pcl-kbd { display: none; }
+}
