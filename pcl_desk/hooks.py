@@ -14,7 +14,7 @@ app_license = "MIT"
 # The `?v=` suffixes are cache busters. Bump the number whenever the file
 # changes, or browsers will keep serving the old copy for hours.
 app_include_css = [
-    "/assets/pcl_desk/css/pcl_desk.css?v=2",
+    "/assets/pcl_desk/css/pcl_desk.css?v=3",
 ]
 
 app_include_js = [
