@@ -270,7 +270,13 @@ body.pcl-wide .layout-main {
   width: 100%;
 }
 .pcl-nav-item:hover { background: var(--pcl-sidebar-hover); }
-.pcl-nav-item svg { width: 15px; height: 15px; flex: 0 0 15px; opacity: 0.66; }
+
+/* margin: 0 is load-bearing. Frappe styles its own svg.icon with margin:auto,
+   which inside a full-width flex row resolves to half the free space on each
+   side — so every row in this drawer rendered shoved against the right edge.
+   Same reason it looks fine in the auto-width navbar buttons: no free space
+   there for auto to eat. */
+.pcl-nav-item svg { width: 15px; height: 15px; flex: 0 0 15px; opacity: 0.66; margin: 0; }
 
 .pcl-nav-empty {
   padding: 18px 8px;
@@ -296,7 +302,7 @@ body.pcl-wide .layout-main {
   background: var(--control-bg, #f3f3f3);
   color: var(--text-color, #383838);
 }
-.pcl-navbar-btn svg { width: 16px; height: 16px; }
+.pcl-navbar-btn svg { width: 16px; height: 16px; margin: 0; }
 .pcl-navbar-btn .pcl-kbd {
   border: 1px solid var(--border-color, #ddd);
   border-radius: 4px;
