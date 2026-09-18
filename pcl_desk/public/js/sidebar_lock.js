@@ -1,7 +1,9 @@
 /* ============================================================================
    Phannthamit Desk — one sidebar, everywhere, opened where you work
    ----------------------------------------------------------------------------
-   v5. Adds per-person section order on top of v4's behaviour.
+   v6. Per-person section order. v5 had the same idea and did nothing: it
+   asked the server which section the person works in exactly once, at patch
+   time, before frappe.db existed, and never asked again.
 
    HISTORY, BECAUSE IT MATTERS
    ---------------------------
@@ -156,6 +158,7 @@
 
 		var originalResolve = P.resolve_sidebar;
 		P.resolve_sidebar = function (entity, module) {
+			fetchSection();
 			if (home()) { reorder(); return HOME; }
 			return originalResolve.call(this, entity, module);
 		};
@@ -164,11 +167,17 @@
 		// returns early and calls setup() straight out. This is the other half.
 		var originalSetup = P.setup;
 		P.setup = function (title) {
+			fetchSection();
 			if (home()) { reorder(); return originalSetup.call(this, HOME); }
 			return originalSetup.call(this, title);
 		};
 
 		P.__pclLocked = true;
+
+		// Asked from BOTH overrides, not only here. This patch usually lands
+		// before frappe.db exists, and a single attempt at patch time silently
+		// did nothing at all - the lock worked, the ordering never fired. The
+		// `asked` guard means it still only ever runs once.
 		fetchSection();
 		return true;
 	}
