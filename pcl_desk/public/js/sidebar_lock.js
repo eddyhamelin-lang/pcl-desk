@@ -33,9 +33,16 @@
    where the decision is actually made, and leaves workspace_sidebar_item exactly
    as Frappe built it. Every tile and link then routes where it says it does.
 
-   HOW THIS FAILS: if a future Frappe renames resolve_sidebar, the patch stops
-   applying and the sidebar reverts to stock — a nuisance you can see. The old
-   version's failure mode was navigation silently going somewhere else.
+   v4 (18 September): resolve_sidebar alone missed workspace pages. On a route
+   like Workspaces/Invoicing, set_workspace_sidebar() finds that workspace's own
+   entry in the map and calls setup(<name>) directly, never asking
+   resolve_sidebar. So v4 also overrides setup(title) — the one function that
+   draws the sidebar — and swaps the title for Phannthamit. The routing map is
+   still never touched.
+
+   HOW THIS FAILS: if a future Frappe renames resolve_sidebar or setup, the patch
+   stops applying and the sidebar reverts to stock — a nuisance you can see. The
+   old version's failure mode was navigation silently going somewhere else.
    ========================================================================== */
 (function () {
 	"use strict";
@@ -46,6 +53,15 @@
 	var HOME = "Phannthamit";
 	var HOME_KEY = "phannthamit";
 
+	// Absent or empty means this person cannot see the company workspace — a
+	// role without access. Leave their navigation alone rather than handing them
+	// a blank sidebar.
+	function hasHome() {
+		var map = frappe.boot && frappe.boot.workspace_sidebar_item;
+		var home = map && map[HOME_KEY];
+		return !!(home && home.items && home.items.length);
+	}
+
 	function patch() {
 		if (!window.frappe || !frappe.ui || typeof frappe.ui.Sidebar !== "function") {
 			return false;
@@ -54,15 +70,18 @@
 		if (P.__pclLocked) return true;
 		if (typeof P.resolve_sidebar !== "function") return false;
 
+		if (typeof P.setup !== "function") return false;
+
 		var original = P.resolve_sidebar;
 		P.resolve_sidebar = function (entity, module) {
-			var map = frappe.boot && frappe.boot.workspace_sidebar_item;
-			var home = map && map[HOME_KEY];
-			// Absent or empty means this person cannot see the company workspace
-			// — a role without access. Leave their navigation alone rather than
-			// handing them a blank sidebar.
-			if (home && home.items && home.items.length) return HOME;
+			if (hasHome()) return HOME;
 			return original.call(this, entity, module);
+		};
+
+		// Workspace pages skip resolve_sidebar and call setup(<workspace>) directly.
+		var originalSetup = P.setup;
+		P.setup = function (title) {
+			return originalSetup.call(this, hasHome() ? HOME : title);
 		};
 
 		P.__pclLocked = true;
