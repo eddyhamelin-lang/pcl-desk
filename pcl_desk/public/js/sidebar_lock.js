@@ -1,48 +1,61 @@
 /* ============================================================================
-   Phannthamit Desk — one sidebar, everywhere
+   Phannthamit Desk — one sidebar, everywhere, opened where you work
    ----------------------------------------------------------------------------
-   Third attempt, and the first one that does not break navigation.
+   v5. Adds per-person section order on top of v4's behaviour.
 
-   The previous version pointed every one of the 73 entries in
-   `frappe.boot.workspace_sidebar_item` at the Phannthamit entry, so the renderer
-   could not pick anything else. The company menu was on every page. It also
-   broke navigation, and nobody saw it until 18 September.
+   HISTORY, BECAUSE IT MATTERS
+   ---------------------------
+   v2 rewrote `frappe.boot.workspace_sidebar_item`, pointing all 73 entries at
+   the Phannthamit one. The company menu appeared everywhere — and every tile on
+   the Desktop grid silently started opening the Command Centre, because those
+   tiles are built from `map[key].items[0]`.
 
-   That map is not only read by the sidebar. The Desktop grid — the page of tiles
-   you get from the app menu — builds each tile's link from the FIRST ITEM of
-   that workspace's sidebar: get_route_for_icon(map[key].items[0]).
+   v3 stopped rewriting the map and overrode `resolve_sidebar` instead. Tiles came
+   back. But workspace PAGES lost the company menu: `set_workspace_sidebar()`
+   returns early and calls `setup(title)` directly, never reaching
+   `resolve_sidebar`.
 
-   So every tile inherited Phannthamit's first item, Command Centre:
+   v4 overrode `setup` as well. That is the shape that works.
 
-       Invoicing    ->  /desk/phannthamit?sidebar=Invoicing
-       Payments     ->  /desk/phannthamit?sidebar=Payments
-       Selling      ->  /desk/phannthamit?sidebar=Selling
-       Organization ->  /desk/phannthamit?sidebar=Organization
+   WHAT v5 ADDS
+   ------------
+   One menu for the whole company is right, but it is long, and the part you
+   actually work in was wherever we happened to put it. The Finance Manager
+   opened an accounting page and found Sales, Purchasing and Warehouse above her
+   own section.
 
-   Only the ?sidebar= part differed, and that had been made meaningless because
-   every sidebar WAS the company menu. The Finance Manager clicked
-   Desktop -> Accounting -> Invoicing and landed back on the command centre,
-   three times.
+   So: the section matching the person's own `Employee.pcl_home_section` is moved
+   to the top, under the three company-wide links. Everything else keeps its
+   order. There is still exactly ONE menu record — nothing is duplicated per
+   person, so a change made once is a change made for everybody.
 
-   THE FIX: do not touch the routing data. Frappe decides which sidebar to draw
-   in exactly one place —
+   WHY NOT ROLES
+   -------------
+   Roles cannot tell these people apart. The Finance Manager holds Sales Manager,
+   Sales User, Accounts Manager, Accounts User, HR Manager and Stock User; the
+   General Manager holds nearly as many. Ordering by role would put the same
+   section first for everyone. `pcl_home_section` is set deliberately, by a
+   person, and says one thing only: where this person works. It grants nothing.
 
-       frappe.ui.Sidebar.prototype.resolve_sidebar(entity, module)
+   WHY NOT `for_user`
+   ------------------
+   `Workspace Sidebar` carries a `for_user` field, but per-user sidebars are not
+   a working feature in v16, and a personal copy of a 60-item menu would drift
+   from the shared one within a month.
 
-   Overriding it to answer "Phannthamit" gives the same guarantee at the point
-   where the decision is actually made, and leaves workspace_sidebar_item exactly
-   as Frappe built it. Every tile and link then routes where it says it does.
+   WHAT IS DELIBERATELY LEFT ALONE
+   -------------------------------
+   `items[0]` never moves. The three company-wide links — Command Centre,
+   Announcements, Company Handbook — stay at the top, so the Phannthamit tile on
+   the Desktop grid still routes to the Command Centre. And no key other than
+   "phannthamit" is touched, ever.
 
-   v4 (18 September): resolve_sidebar alone missed workspace pages. On a route
-   like Workspaces/Invoicing, set_workspace_sidebar() finds that workspace's own
-   entry in the map and calls setup(<name>) directly, never asking
-   resolve_sidebar. So v4 also overrides setup(title) — the one function that
-   draws the sidebar — and swaps the title for Phannthamit. The routing map is
-   still never touched.
-
-   HOW THIS FAILS: if a future Frappe renames resolve_sidebar or setup, the patch
-   stops applying and the sidebar reverts to stock — a nuisance you can see. The
-   old version's failure mode was navigation silently going somewhere else.
+   HOW THIS FAILS
+   --------------
+   If a future Frappe renames `resolve_sidebar` or `setup`, the patch stops
+   applying and the sidebar reverts to stock behaviour — visible, harmless.
+   Check `frappe.ui.Sidebar.prototype.__pclLocked` after any core update; if it
+   is `undefined`, the lock has quietly switched itself off.
    ========================================================================== */
 (function () {
 	"use strict";
@@ -53,13 +66,82 @@
 	var HOME = "Phannthamit";
 	var HOME_KEY = "phannthamit";
 
-	// Absent or empty means this person cannot see the company workspace — a
-	// role without access. Leave their navigation alone rather than handing them
-	// a blank sidebar.
-	function hasHome() {
-		var map = frappe.boot && frappe.boot.workspace_sidebar_item;
-		var home = map && map[HOME_KEY];
-		return !!(home && home.items && home.items.length);
+	var mySection = null;   // filled in asynchronously, once per page load
+	var asked = false;
+
+	function home() {
+		var map = window.frappe && frappe.boot && frappe.boot.workspace_sidebar_item;
+		var h = map && map[HOME_KEY];
+		// Absent, or empty, means this person cannot see the company workspace —
+		// a role without access to it. Leave their navigation alone rather than
+		// handing them a blank sidebar.
+		return h && h.items && h.items.length ? h : null;
+	}
+
+	// Move the person's own section up, keeping everything else in order.
+	// Idempotent: re-running with the same section does nothing.
+	function reorder() {
+		var h = home();
+		if (!h || !mySection || h.__pclOrdered === mySection) return false;
+
+		var items = h.items;
+		var lead = [];      // the company-wide links above the first section
+		var blocks = [];
+		var cur = null;
+		var i;
+
+		for (i = 0; i < items.length; i++) {
+			if (items[i].type === "Section Break") {
+				cur = { label: items[i].label, rows: [items[i]] };
+				blocks.push(cur);
+			} else if (cur) {
+				cur.rows.push(items[i]);
+			} else {
+				lead.push(items[i]);
+			}
+		}
+
+		var hit = -1;
+		for (i = 0; i < blocks.length; i++) {
+			if (blocks[i].label === mySection) hit = i;
+		}
+		if (hit < 0) return false;
+
+		var out = lead.concat(blocks[hit].rows);
+		for (i = 0; i < blocks.length; i++) {
+			if (i !== hit) out = out.concat(blocks[i].rows);
+		}
+
+		h.items = out;
+		h.__pclOrdered = mySection;
+		return true;
+	}
+
+	function redraw() {
+		// Guarded: a redraw is a convenience. If it throws, the new order still
+		// applies the next time anything renders the sidebar, and a thrown error
+		// here must never cost somebody their navigation.
+		try {
+			if (frappe.app && frappe.app.sidebar && frappe.app.sidebar.setup) {
+				frappe.app.sidebar.setup(HOME);
+			}
+		} catch (e) {}
+	}
+
+	function fetchSection() {
+		if (asked || !window.frappe || !frappe.db || !frappe.session) return;
+		asked = true;
+		try {
+			frappe.db
+				.get_value("Employee", { user_id: frappe.session.user, status: "Active" },
+				           "pcl_home_section")
+				.then(function (r) {
+					var v = r && r.message && r.message.pcl_home_section;
+					if (!v) return;
+					mySection = v;
+					if (reorder()) redraw();
+				});
+		} catch (e) {}
 	}
 
 	function patch() {
@@ -68,23 +150,26 @@
 		}
 		var P = frappe.ui.Sidebar.prototype;
 		if (P.__pclLocked) return true;
-		if (typeof P.resolve_sidebar !== "function") return false;
+		if (typeof P.resolve_sidebar !== "function" || typeof P.setup !== "function") {
+			return false;
+		}
 
-		if (typeof P.setup !== "function") return false;
-
-		var original = P.resolve_sidebar;
+		var originalResolve = P.resolve_sidebar;
 		P.resolve_sidebar = function (entity, module) {
-			if (hasHome()) return HOME;
-			return original.call(this, entity, module);
+			if (home()) { reorder(); return HOME; }
+			return originalResolve.call(this, entity, module);
 		};
 
-		// Workspace pages skip resolve_sidebar and call setup(<workspace>) directly.
+		// Workspace pages never reach resolve_sidebar: set_workspace_sidebar()
+		// returns early and calls setup() straight out. This is the other half.
 		var originalSetup = P.setup;
 		P.setup = function (title) {
-			return originalSetup.call(this, hasHome() ? HOME : title);
+			if (home()) { reorder(); return originalSetup.call(this, HOME); }
+			return originalSetup.call(this, title);
 		};
 
 		P.__pclLocked = true;
+		fetchSection();
 		return true;
 	}
 
