@@ -20,7 +20,7 @@ app_include_css = [
 app_include_js = [
     # sidebar_lock is first on purpose: it patches frappe.ui.Sidebar as early as
     # possible, so the company menu is the one drawn on first paint.
-    "/assets/pcl_desk/js/sidebar_lock.js?v=5",
+    "/assets/pcl_desk/js/sidebar_lock.js?v=6",
     "/assets/pcl_desk/js/all_options.js?v=1",
 ]
 
