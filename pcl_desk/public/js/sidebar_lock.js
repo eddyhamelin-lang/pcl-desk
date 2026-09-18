@@ -1,9 +1,24 @@
 /* ============================================================================
    Phannthamit Desk — one sidebar, everywhere, opened where you work
    ----------------------------------------------------------------------------
-   v6. Per-person section order. v5 had the same idea and did nothing: it
-   asked the server which section the person works in exactly once, at patch
-   time, before frappe.db existed, and never asked again.
+   v7. Per-person section order, asking the RIGHT question.
+
+   v5 and v6 both shipped and both did nothing, for the same reason wearing two
+   different hats. The lookup fired early, while `frappe.session` existed but
+   `frappe.session.user` was still empty. The filter was therefore built as
+
+       { user_id: undefined, status: "Active" }
+
+   and JSON.stringify drops undefined, so what actually went down the wire was
+
+       filters={"status":"Active"}
+
+   - "give me ANY active employee". It got the first one in the table, whose
+   section happens to be blank, blank means do not reorder, and a one-shot
+   `asked` flag then blocked every later attempt. A wrong answer, once, forever.
+
+   Two changes: wait for `frappe.session.user` before asking at all, and only
+   stop asking once the server has actually answered.
 
    HISTORY, BECAUSE IT MATTERS
    ---------------------------
@@ -69,7 +84,9 @@
 	var HOME_KEY = "phannthamit";
 
 	var mySection = null;   // filled in asynchronously, once per page load
-	var asked = false;
+	var settled = false;    // the server has answered, whatever the answer was
+	var inflight = false;
+	var attempts = 0;
 
 	function home() {
 		var map = window.frappe && frappe.boot && frappe.boot.workspace_sidebar_item;
@@ -131,19 +148,35 @@
 	}
 
 	function fetchSection() {
-		if (asked || !window.frappe || !frappe.db || !frappe.session) return;
-		asked = true;
+		if (settled || inflight || attempts >= 6) return;
+		if (!window.frappe || !frappe.db || !frappe.session) return;
+
+		// THE BUG THAT COST TWO DEPLOYS: frappe.session is an object long before
+		// frappe.session.user has a value in it. Asking then sends
+		// filters={"status":"Active"} - undefined is dropped on the way to the
+		// URL - which matches the first active employee in the table rather than
+		// this person. Wait for the user.
+		var me = frappe.session.user;
+		if (!me || me === "Guest") return;
+
+		inflight = true;
+		attempts = attempts + 1;
 		try {
 			frappe.db
-				.get_value("Employee", { user_id: frappe.session.user, status: "Active" },
+				.get_value("Employee", { user_id: me, status: "Active" },
 				           "pcl_home_section")
-				.then(function (r) {
-					var v = r && r.message && r.message.pcl_home_section;
-					if (!v) return;
-					mySection = v;
-					if (reorder()) redraw();
-				});
-		} catch (e) {}
+				.then(
+					function (r) {
+						inflight = false;
+						settled = true;   // answered. Blank is a real answer: no reorder.
+						var v = r && r.message && r.message.pcl_home_section;
+						if (!v) return;
+						mySection = v;
+						if (reorder()) redraw();
+					},
+					function () { inflight = false; }   // failed: allow a retry
+				);
+		} catch (e) { inflight = false; }
 	}
 
 	function patch() {
@@ -174,10 +207,9 @@
 
 		P.__pclLocked = true;
 
-		// Asked from BOTH overrides, not only here. This patch usually lands
-		// before frappe.db exists, and a single attempt at patch time silently
-		// did nothing at all - the lock worked, the ordering never fired. The
-		// `asked` guard means it still only ever runs once.
+		// Asked from BOTH overrides as well as here, because this patch lands
+		// before the session is populated. The guards above mean it still only
+		// makes one successful call per page load.
 		fetchSection();
 		return true;
 	}
