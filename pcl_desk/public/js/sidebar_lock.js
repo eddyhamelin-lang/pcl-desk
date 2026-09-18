@@ -106,8 +106,16 @@
 		}, 150);
 	}
 
-	// A few spaced retries for the case where boot is not populated yet.
-	[0, 200, 600, 1500].forEach(function (ms) {
-		setTimeout(lock, ms);
-	});
+	// Boot can arrive late on a slow connection, and four fixed shots stopped at
+	// 1.5 s. A first load slower than that left the generic stub in place until
+	// the person happened to navigate - which is what "the menu disappears
+	// randomly" actually was. Keep trying until it takes, then stop. lock() is
+	// idempotent, so every call after the first is a no-op.
+	if (!lock()) {
+		var settleTries = 0;
+		var settle = setInterval(function () {
+			settleTries = settleTries + 1;
+			if (lock() || settleTries > 120) clearInterval(settle);
+		}, 250);
+	}
 })();
