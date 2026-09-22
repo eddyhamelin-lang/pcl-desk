@@ -22,6 +22,7 @@ app_include_js = [
     # possible, so the company menu is the one drawn on first paint.
     "/assets/pcl_desk/js/sidebar_lock.js?v=7",
     "/assets/pcl_desk/js/all_options.js?v=1",
+    "/assets/pcl_desk/js/chart_tidy.js?v=1",
 ]
 
 # ── APPS SCREEN ──────────────────────────────────────────────────────────────
