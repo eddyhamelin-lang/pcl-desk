@@ -393,3 +393,6 @@ body.pcl-wide .layout-main {
 @media (max-width: 720px) {
   .pcl-navbar-btn .pcl-btn-text, .pcl-navbar-btn .pcl-kbd { display: none; }
 }
+
+/* Scrollbars: Frappe's default is pale grey on near-white and hard to see */
+html, body, * { scrollbar-color: #0F6E6E #E5E7EB !important; }
