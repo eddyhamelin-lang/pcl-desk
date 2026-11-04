@@ -20,7 +20,14 @@ app_include_css = [
 app_include_js = [
     # sidebar_lock is first on purpose: it patches frappe.ui.Sidebar as early as
     # possible, so the company menu is the one drawn on first paint.
-    "/assets/pcl_desk/js/sidebar_lock.js?v=7",
+    #
+    # 4 November 2026, bumped v7 -> v8. sidebar_lock.js was rewritten for
+    # v16.53 and deployed, the new file was served correctly, and NOTHING
+    # CHANGED - because the suffix had not moved, so every browser kept running
+    # the cached v7 copy. The comment above says exactly this and it still got
+    # missed. If a deploy of this app ever appears to do nothing, check here
+    # first.
+    "/assets/pcl_desk/js/sidebar_lock.js?v=8",
     "/assets/pcl_desk/js/all_options.js?v=1",
     "/assets/pcl_desk/js/chart_tidy.js?v=1",
 ]
