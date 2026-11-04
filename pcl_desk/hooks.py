@@ -8,7 +8,7 @@ app_license = "MIT"
 # ── DESK ASSETS ──────────────────────────────────────────────────────────────
 # This is the entire contract with Frappe. No boot hook, no doc_events, no
 # scheduler jobs, no overridden methods, no forked templates — this app adds one
-# stylesheet and two scripts to the desk and nothing else. Anything that starts
+# stylesheet and four scripts to the desk and nothing else. Anything that starts
 # deciding what a user may see belongs in a DocType with permissions, not here.
 #
 # The `?v=` suffixes are cache busters. Bump the number whenever the file
@@ -34,6 +34,13 @@ app_include_js = [
     # desk alone" to "draw the company tree". Bumped at the same moment the
     # file was edited this time, rather than after being caught out by it.
     "/assets/pcl_desk/js/sidebar_lock.js?v=9",
+    #
+    # 4 November 2026, new. sidebar_lock puts the company tree back; this draws
+    # the icons on it. Frappe v16 omits the icon element for any item nested
+    # under a Section Break heading, so 74 items carried an icon in the data
+    # and three were visible on screen. Tevy: "there are no more coloured
+    # icons." Loaded after the lock because it reads the menu the lock chose.
+    "/assets/pcl_desk/js/sidebar_icons.js?v=1",
     "/assets/pcl_desk/js/all_options.js?v=1",
     "/assets/pcl_desk/js/chart_tidy.js?v=1",
 ]
