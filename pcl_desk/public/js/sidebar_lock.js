@@ -30,6 +30,42 @@
  * filter it does apply works on DocType read permission, which on this site is
  * far wider than anyone's job. `Stock User` alone carries read on Sales Order,
  * Customer, Supplier, Purchase Order, Territory and Warehouse.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * 4 NOVEMBER 2026 — THE DEFAULT IS NOW THE FULL TREE, NOT "DO NOTHING".
+ *
+ * The scoped menus were assigned to two people on the morning of 4 November
+ * and both reported the same thing within the hour. Tevy: "the sidebar is
+ * missing some functions that used to be there. It looks pretty empty now.
+ * Also there are no more coloured icons. We actually prefer the previous
+ * layout... sales map is missing, quality inspection too." Theara: "I can see
+ * only this function Eddy."
+ *
+ * All three complaints were accurate, and the data says why:
+ *   - The Phannthamit menu is 84 links under 7 collapsible headings and EVERY
+ *     item carries an `icon`. The Sales menu is 11 links and NOT ONE of them
+ *     has an icon field at all. Same for Finance at 9.
+ *   - Sales Map is item 15 of the Phannthamit tree and Quality Inspections is
+ *     item 63. Neither appears in the Sales menu. Tevy inspects incoming goods
+ *     AND works the territory, so scoping her to one menu took away half her
+ *     job by design.
+ *
+ * That is the real lesson and it is worth writing down: the audience table
+ * assumes one person belongs to one area. In a company this size nobody does.
+ * Theara is finance, HR, purchasing and office administration. Tevy is sales
+ * and quality. A menu that names one area is wrong for both of them, and no
+ * ordering of the table fixes that.
+ *
+ * So the no-match default changes from "leave the desk alone" to "draw the
+ * company tree". Eddy's decision, 4 November.
+ *
+ * THIS DOES NOT WIDEN WHAT ANYONE CAN OPEN. Frappe filters every sidebar link
+ * through `is_item_allowed` -> `frappe.has_permission` as it draws it, so each
+ * person sees their own subset of the 84. The permission system does the
+ * scoping, which is where scoping belongs — a hand-maintained menu is not a
+ * security control and never was. The audience table stays for the case where
+ * someone genuinely should be pinned to one area, such as a future warehouse
+ * hire; it is simply no longer what happens by default.
  */
 
 (function () {
@@ -67,6 +103,15 @@
 		{ role: "PCL View Quality", sidebar: "Regulatory & Quality" }
 	];
 
+	/* What everybody else gets. Set to null to go back to the 3 November
+	 * behaviour, where someone holding no audience role was left with whatever
+	 * Frappe drew for the module they happened to be on.
+	 *
+	 * This is the pre-v16 layout the staff asked for by name on 4 November:
+	 * the company tree, with its headings and its icons, on every page.
+	 */
+	var DEFAULT_SIDEBAR = "Phannthamit";
+
 	/* Why audience roles rather than the job roles people already hold:
 	 * the job roles overlap too much to tell anyone apart. Finance holds
 	 * Sales Manager; Sales & Marketing holds Quality Manager and signs quality
@@ -74,9 +119,10 @@
 	 * the wrong menu. A role whose only purpose is to say "this is your menu"
 	 * cannot collide with anything.
 	 *
-	 * NOBODY MATCHES? Then this file does nothing at all and the desk behaves
-	 * exactly as Frappe built it. That is deliberate: the failure mode of a
-	 * navigation change should be the stock navigation, never a blank one.
+	 * NOBODY MATCHES? Then DEFAULT_SIDEBAR applies — the full company tree as
+	 * of 4 November 2026. If that menu is ever missing or empty this file still
+	 * does nothing at all, so the failure mode of a navigation change remains
+	 * the stock navigation and never a blank one.
 	 */
 
 	function chooseSidebarName(roles) {
@@ -85,7 +131,7 @@
 				return AUDIENCES[i].sidebar;
 			}
 		}
-		return null;
+		return DEFAULT_SIDEBAR;
 	}
 
 	function apply() {
@@ -99,7 +145,7 @@
 		if (!roles.length) return false;
 
 		var wanted = chooseSidebarName(roles);
-		if (!wanted) return true; // no audience role — leave the desk alone, and stop trying
+		if (!wanted) return true; // DEFAULT_SIDEBAR is null — leave the desk alone, and stop trying
 
 		var source = all[wanted];
 		if (!source || !source.items || !source.items.length) {
