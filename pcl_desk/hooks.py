@@ -27,7 +27,13 @@ app_include_js = [
     # the cached v7 copy. The comment above says exactly this and it still got
     # missed. If a deploy of this app ever appears to do nothing, check here
     # first.
-    "/assets/pcl_desk/js/sidebar_lock.js?v=8",
+    #
+    # 4 November 2026, later the same day, bumped v8 -> v9. The scoped menus
+    # went live, Tevy and Theara both said the sidebar had lost most of what
+    # they use and all of its icons, and the default changed from "leave the
+    # desk alone" to "draw the company tree". Bumped at the same moment the
+    # file was edited this time, rather than after being caught out by it.
+    "/assets/pcl_desk/js/sidebar_lock.js?v=9",
     "/assets/pcl_desk/js/all_options.js?v=1",
     "/assets/pcl_desk/js/chart_tidy.js?v=1",
 ]
